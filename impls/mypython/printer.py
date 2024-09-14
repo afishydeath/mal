@@ -8,4 +8,4 @@ def pr_str(mals):
         return str(mals)
 
 if __name__ == "__main__":
-    print(pr_str(['+',2,['*',3,4]]))
+    print(pr_str(['+', 1, ['+', 2, 3]]))

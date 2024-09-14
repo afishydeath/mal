@@ -38,7 +38,7 @@ def read_atom(reader):
     elif token in [i for i in '+-*/']:
         return token
     else:
-        print("error, "+token)
+        return token #TODO
 
 def read_str(string):
     tokens = tokenize(string)
@@ -46,5 +46,5 @@ def read_str(string):
     mal = read_form(reader)
     return mal
 
-# if __name__ == "__main__":
-#     print(read_str("(+ 2 (* 3 4))"))
+if __name__ == "__main__":
+    print(read_str("  ( +   1   (+   2 3   )   )"))
