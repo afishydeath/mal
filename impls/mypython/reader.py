@@ -44,11 +44,11 @@ def read_atom(reader:Reader) -> MalType:
     else:
         return MalSymbol(token)
 
-def read_str(string):
+def read_str(string:str) -> MalType:
     tokens = tokenize(string)
     reader = Reader(tokens)
-    mal = read_form(reader)
-    return mal
+    ast = read_form(reader)
+    return ast
 
 if __name__ == "__main__":
     print(read_str("[1 2"))
