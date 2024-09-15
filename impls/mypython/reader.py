@@ -20,18 +20,18 @@ def tokenize(string):
     return tokens
 
 def read_form(reader):
-    if not reader.peek():
-        return 'EOF'
-    match reader.peek()[0]:
-        case '(':
-            return read_list(reader)
-        case _ :
-            return read_atom(reader)
+    if reader.peek()[0] == '(':
+        return read_list(reader)
+    else:
+        return read_atom(reader)
+
 
 def read_list(reader):
     mals = []
     reader.next()
     while reader.peek() != ')':
+        if reader.peek() == '':
+            return 'EOF'
         mals.append(read_form(reader))
     return mals
 
@@ -51,4 +51,4 @@ def read_str(string):
     return mal
 
 if __name__ == "__main__":
-    print(read_str("  ( +   1   (+   2 3   )   )"))
+    print(read_str("[1 2"))
