@@ -42,7 +42,7 @@ def read_list(reader:Reader) -> MalList:
 
 def read_atom(reader:Reader) -> MalType:
     token = reader.peek()
-    if token.isdigit():
+    if token.isdigit() or (token[0]=='-' and token[1:].isdigit()):
         return MalInteger(int(token))
     else:
         return MalSymbol(token)

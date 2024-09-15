@@ -38,6 +38,8 @@ def main() -> None:
             print(rep(mal_readline.input_("user> ")))
         except EOFError:
             return None
+        except KeyError:
+            print("Error: KeyError")
 
 if __name__ == "__main__":
     main()
