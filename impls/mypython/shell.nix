@@ -6,5 +6,6 @@ in
       python312
       pyright
       python312Packages.regex
+      pylint
     ];
   }

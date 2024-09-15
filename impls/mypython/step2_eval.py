@@ -1,7 +1,7 @@
 #!/usr/bin/env nix-shell
 #! nix-shell -i python3 --packages python312 python312Packages.regex
 import reader, printer, mal_readline
-from mal_types import MalType, MalSymbol, MalList
+from mal_types import MalType, Symbol, List
 
 repl_env = {
         '+' : lambda a,b:a+b,
@@ -15,9 +15,9 @@ def READ(string:str) -> MalType:
 
 def EVAL(ast:MalType, repl_env:dict):
     # print(ast)
-    if isinstance(ast, MalSymbol):
+    if isinstance(ast, Symbol):
         return repl_env[str(ast)]
-    elif isinstance(ast, MalList) and len(ast) > 0:
+    elif isinstance(ast, List) and len(ast) > 0:
         function = EVAL(ast[0], repl_env)
         rest = [EVAL(x,repl_env) for x in ast[1:]]
         # print(rest)
