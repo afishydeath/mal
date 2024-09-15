@@ -1,1 +1,5 @@
-i've finished the basic functionality for step 1 but i'm yet to implement the "deferrable" stuff
+step 2 done
+todo:
+- [ ] complete deferrable for step 1
+- [ ] complete deferrable for step 2
+
