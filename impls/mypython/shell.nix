@@ -3,8 +3,8 @@ let
 in
   pkgs.mkShell {
     buildInputs = with pkgs; [
-      python3
+      python312
       pyright
-      python3Packages.regex
+      python312Packages.regex
     ];
   }

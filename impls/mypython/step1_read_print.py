@@ -1,3 +1,5 @@
+#!/usr/bin/env nix-shell
+#! nix-shell -i python3 --packages python312 python312Packages.regex
 import reader, printer
 
 def READ(string):
@@ -7,7 +9,6 @@ def EVAL(mals):
     return mals
 
 def PRINT(mals):
-    print(mals)
     return printer.pr_str(mals)
 
 def rep(string):
