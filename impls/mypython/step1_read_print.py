@@ -1,6 +1,6 @@
 #!/usr/bin/env nix-shell
 #! nix-shell -i python3 --packages python312 python312Packages.regex
-import reader, printer
+import reader, printer, mal_readline
 
 def READ(string):
     return reader.read_str(string)
@@ -17,13 +17,9 @@ def rep(string):
     return PRINT(mals)
 
 def main():
-    try:
-        print(rep(input("user> ")))
-    except EOFError:
-        return 0
     while True:
         try:
-            print(rep(input("user> ")))
+            print(rep(mal_readline.input_("user> ")))
         except EOFError:
             return 0
 
