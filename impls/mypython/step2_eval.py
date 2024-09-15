@@ -14,11 +14,14 @@ def READ(string:str) -> MalType:
     return reader.read_str(string)
 
 def EVAL(ast:MalType, repl_env:dict):
+    # print(ast)
     if isinstance(ast, MalSymbol):
         return repl_env[str(ast)]
     elif isinstance(ast, MalList) and len(ast) > 0:
         function = EVAL(ast[0], repl_env)
-        return function(*[EVAL(x, repl_env) for x in ast[1:]])
+        rest = [EVAL(x,repl_env) for x in ast[1:]]
+        # print(rest)
+        return function(*rest)
     return ast
 
 def PRINT(ast:MalType) -> str:

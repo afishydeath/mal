@@ -1,6 +1,7 @@
 #!/usr/bin/env nix-shell
 #!nix-shell -i python3 -p python312 python312Packages.regex
 import regex as re
+import mal_readline
 from mal_types import MalType, MalList, MalSymbol, MalInteger
 
 class Reader:
@@ -21,7 +22,7 @@ def tokenize(string:str) -> list[str]:
     return tokens
 
 def read_form(reader:Reader) -> MalType:
-    if reader.peek()[0] == '(':
+    if reader.peek() == '(':
         return read_list(reader)
     else:
         return read_atom(reader)
@@ -29,16 +30,18 @@ def read_form(reader:Reader) -> MalType:
 
 def read_list(reader:Reader) -> MalList:
     mals = MalList([])
-    reader.next()
-    while reader.peek() != ')':
-        if reader.peek() == '':
-            mals.append(MalSymbol('EOF'))
+    while True:
+        reader.next()
+        if reader.peek() == ')':
             return mals
-        mals.append(read_form(reader))
-    return mals
+        elif reader.peek() == '':
+            mals.append(MalSymbol("EOF"))
+            return mals
+        else:
+            mals.append(read_form(reader))
 
 def read_atom(reader:Reader) -> MalType:
-    token = reader.next()
+    token = reader.peek()
     if token.isdigit():
         return MalInteger(int(token))
     else:
@@ -51,4 +54,10 @@ def read_str(string:str) -> MalType:
     return ast
 
 if __name__ == "__main__":
-    print(read_str("[1 2"))
+    string = mal_readline.input_("user> ")
+    print(string)
+    tokens = tokenize(string)
+    print(tokens)
+    reader = Reader(tokens)
+    ast = read_form(reader)
+    print(ast)
