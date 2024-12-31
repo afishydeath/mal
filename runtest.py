@@ -1,5 +1,4 @@
-#! /usr/bin/env nix-shell
-#! nix-shell -i python3 -p python3
+#! /usr/bin/env python
 
 from __future__ import print_function
 import os, sys, re
