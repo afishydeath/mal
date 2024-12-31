@@ -1,5 +1,5 @@
 from m_readline import m_input 
-from m_types import MalType
+from m_types import MalEmptyReturn, MalType
 import reader
 import printer
 
@@ -14,7 +14,8 @@ def PRINT(mals : MalType) -> str:
 
 def rep(string):
     mals = READ(string)
-    print(mals)
+    if mals == MalEmptyReturn:
+        return MalEmptyReturn
     mals = EVAL(mals)
     string = PRINT(mals)
     return string
@@ -24,4 +25,6 @@ if __name__ == "__main__":
             inp = m_input("user> ")
         except EOFError:
             break
-        print(rep(inp))
+        output = rep(inp)
+        if output is not MalEmptyReturn:
+            print(output)

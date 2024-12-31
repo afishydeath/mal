@@ -1,5 +1,7 @@
 class MalList(list["MalType"]):
-    pass
+    list_type : str = "("
+    def make_vector(self):
+        self.list_type = '['
 
 class MalNumber(int):
     pass
@@ -7,4 +9,13 @@ class MalNumber(int):
 class MalSymbol(str):
     pass
 
-MalType = (MalList | MalNumber | MalSymbol)
+MalEmptyReturn = None
+
+
+MalNil = None
+
+MalBoolean = bool
+
+MalListOrEmpty = (MalList | MalEmptyReturn)
+
+MalType = (MalList | MalNumber | MalSymbol | MalNil | MalBoolean | MalEmptyReturn)

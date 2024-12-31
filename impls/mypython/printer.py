@@ -5,6 +5,10 @@ def pr_str(mals : MalType) -> str:
         stringlist = []
         for mal in mals:
             stringlist.append(pr_str(mal))
-        return '('+(' '.join(stringlist))+')'
+
+        brackets = '()'
+        if mals.list_type == '[':
+            brackets = '[]'
+        return brackets[0]+(' '.join(stringlist))+brackets[1]
     else:
         return str(mals)
