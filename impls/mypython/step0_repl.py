@@ -8,18 +8,12 @@ def PRINT(*args):
     return args[0]
 
 def rep(*args):
-    return READ(EVAL(PRINT(args[0])))
-
-def main():
-    try:
-        print(rep(input("user> ")))
-    except EOFError:
-        return 0
-    while True:
-        try:
-            print(rep(input("user> ")))
-        except EOFError:
-            return 0
+    return READ(EVAL(PRINT(*args[0])))
 
 if __name__ == "__main__":
-    main()
+    while True:
+        try:
+            inp = input("user> ")
+        except EOFError:
+            break
+        print(rep(inp))
