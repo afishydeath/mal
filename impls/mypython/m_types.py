@@ -55,15 +55,27 @@ class MalFunction:
 
 
 class MalNil:
-    pass
+    def __len__(self):
+        return 0
+
+    def __eq__(self, value: object, /) -> bool:
+        if isinstance(value, MalNil):
+            return True
+        return False
 
 
 class MalTrue:
-    pass
+    def __eq__(self, value: object, /) -> bool:
+        if isinstance(value, MalTrue):
+            return True
+        return False
 
 
 class MalFalse:
-    pass
+    def __eq__(self, value: object, /) -> bool:
+        if isinstance(value, MalFalse):
+            return True
+        return False
 
 
 MalEmptyReturn = None

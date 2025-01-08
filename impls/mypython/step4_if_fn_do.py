@@ -10,20 +10,17 @@ from m_types import (
     MalList,
     MalNil,
     MalNotFound,
-    MalNumber,
     MalSymbol,
     MalType,
     MalVector,
 )
 import reader
 import printer
+from core import ns
 
 repl_env: Env = Env(MalNil())
-repl_env.set(MalSymbol("+"), MalFunction(lambda a, b: MalNumber(a + b)))
-repl_env.set(MalSymbol("-"), MalFunction(lambda a, b: MalNumber(a - b)))
-repl_env.set(MalSymbol("*"), MalFunction(lambda a, b: MalNumber(a * b)))
-repl_env.set(MalSymbol("/"), MalFunction(lambda a, b: MalNumber(a / b)))
-# repl_env.set(MalSymbol('DEBUG-EVAL'), MalBoolean(True))
+for key in ns.keys():
+    repl_env.set(MalSymbol(key), ns[key])
 
 
 def READ(string: str) -> MalType:
@@ -55,6 +52,25 @@ def EVAL(ast: MalType, env):
                     return EVAL(ast[2], new_env)
                 else:
                     raise MalArgumentsWrong
+            case MalSymbol("do"):
+                for item in ast[1:-1]:
+                    EVAL(item, env)
+                return EVAL(ast[-1], env)
+            case MalSymbol("if"):
+                condition = EVAL(ast[1], env)
+                if condition not in (MalFalse(), MalNil()):
+                    return EVAL(ast[2], env)
+                elif len(ast) == 4:
+                    return EVAL(ast[3], env)
+                else:
+                    return MalNil()
+            case MalSymbol("fn*"):
+
+                def closure(*args: MalType):
+                    c_env = Env(env, binds=ast[1], exprs=args)  # type: ignore
+                    return EVAL(ast[2], c_env)
+
+                return MalFunction(closure)
             case _:
                 func = EVAL(ast[0], env)
                 out = func(*[EVAL(item, env) for item in ast[1:]])
@@ -74,9 +90,11 @@ def PRINT(mals: MalType) -> str:
 def rep(string):
     ast = READ(string)
     mals = EVAL(ast, repl_env)
-    string = PRINT(mals)
+    string = PRINT(mals)  # type: ignore
     return string
 
+
+rep("(def! not (fn* (a) (if a false true)))")
 
 if __name__ == "__main__":
     while True:

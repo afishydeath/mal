@@ -1,5 +1,6 @@
 from m_types import (
     MalFalse,
+    MalFunction,
     MalHashMap,
     MalKeyword,
     MalList,
@@ -26,6 +27,8 @@ def pr_str(mals: MalType, print_readably=False) -> str:
         return ":" + str(mals)
     elif isinstance(mals, MalSymbol):
         return str(mals)
+    elif isinstance(mals, MalFunction):
+        return "#<function>"
     elif isinstance(mals, MalString):
         if print_readably:
             return '"' + str(mals) + '"'
@@ -62,4 +65,4 @@ def pr_str(mals: MalType, print_readably=False) -> str:
             + "}"
         )
     else:
-        raise Exception("printing of mal type not implemented")
+        raise Exception(f"printing of mal {type(mals)} type not implemented")

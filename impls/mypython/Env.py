@@ -1,10 +1,21 @@
-from m_types import MalNil, MalNotFound, MalSymbol, MalType
+from m_types import MalList, MalNil, MalNotFound, MalSymbol, MalType
 
 
 class Env:
-    def __init__(self, outer: "MalEnvOrNil") -> None:
+    def __init__(
+        self,
+        outer: "MalEnvOrNil",
+        binds: MalList = MalList(),
+        exprs: MalList = MalList(),
+    ) -> None:
         self.outer: "MalEnvOrNil" = outer
-        self.data: dict[MalSymbol, MalType] = {}
+        self.data: dict[MalType, MalType] = {}
+        for i in range(len(binds)):
+            if binds[i] != "&":
+                self.data[binds[i]] = exprs[i]
+            else:
+                self.data[binds[i + 1]] = MalList(exprs[i:])
+                break
 
     def set(self, key: MalSymbol, value: MalType) -> None:
         self.data[key] = value
