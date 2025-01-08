@@ -31,13 +31,24 @@ class MalEmptyExpr(Exception):
 class MalNotFound(Exception):
     pass
 
+class MalFunction():
+    def __init__(self, function):
+        self.function = function
+    def __call__(self, *args : "MalType") -> "MalType":
+        return self.function(*args)
+
 class MalNil():
+    pass
+
+class MalTrue():
+    pass
+
+class MalFalse():
     pass
 
 MalEmptyReturn = None
 
 
+MalBoolean = (MalTrue | MalFalse)
 
-MalBoolean = bool
-
-MalType = (MalSequential | MalNumber | MalSymbol | MalNil | MalBoolean | MalEmptyReturn | MalString | MalKeyword | MalHashMap)
+MalType = (MalSequential | MalNumber | MalSymbol | MalNil | MalBoolean | MalEmptyReturn | MalString | MalKeyword | MalHashMap | MalFunction)

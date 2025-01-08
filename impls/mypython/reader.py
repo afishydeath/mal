@@ -1,6 +1,6 @@
 from re import findall
 import re
-from m_types import MalEmptyExpr, MalType, MalEOFError, MalSequential, MalList, MalVector, MalHashMap, MalString, MalNumber, MalSymbol, MalKeyword, MalNil, MalBoolean
+from m_types import MalEmptyExpr, MalFalse, MalTrue, MalType, MalEOFError, MalSequential, MalList, MalVector, MalHashMap, MalString, MalNumber, MalSymbol, MalKeyword, MalNil
 
 class Reader:
     def __init__(self, tokens : list[str]) -> None:
@@ -85,9 +85,9 @@ def read_atom(reader : Reader) -> MalType:
     if re.match(r'-?\d+', next):
         return MalNumber(next)
     elif next == 'true':
-        return MalBoolean(True)
+        return MalTrue()
     elif next == 'false':
-        return MalBoolean(False)
+        return MalFalse()
     elif next == 'nil':
         return MalNil()
     elif next[0]==':':
