@@ -13,5 +13,6 @@ except FileNotFoundError:
 
 atexit.register(readline.write_history_file, histfile)
 
+
 def m_input(*args, **kwargs):
     return input(*args, **kwargs)
