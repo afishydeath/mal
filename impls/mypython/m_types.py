@@ -28,6 +28,9 @@ class MalEOFError(Exception):
 class MalEmptyExpr(Exception):
     pass
 
+class MalNotFound(Exception):
+    pass
+
 class MalNil():
     pass
 

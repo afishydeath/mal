@@ -82,7 +82,7 @@ def read_hash_map(reader: Reader) -> MalHashMap:
 
 def read_atom(reader : Reader) -> MalType:
     next = reader.next()
-    if next.isnumeric():
+    if re.match(r'-?\d+', next):
         return MalNumber(next)
     elif next == 'true':
         return MalBoolean(True)
