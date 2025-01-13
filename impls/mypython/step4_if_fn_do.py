@@ -1,9 +1,12 @@
+import printer
+import reader
+from core import ns
 from Env import Env
 from m_readline import m_input
 from m_types import (
     MalArgumentsWrong,
-    MalEOFError,
     MalEmptyExpr,
+    MalEOFError,
     MalFalse,
     MalFunction,
     MalHashMap,
@@ -14,9 +17,6 @@ from m_types import (
     MalType,
     MalVector,
 )
-import reader
-import printer
-from core import ns
 
 repl_env: Env = Env(MalNil())
 for key in ns.keys():
