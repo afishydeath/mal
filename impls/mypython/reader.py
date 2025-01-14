@@ -123,7 +123,6 @@ def read_atom(reader: Reader) -> MalType:
         formatted = ""
         skip = False
         for p in range(1, len(next) - 1):
-            print(next[p])
             if skip:
                 if p == len(next):
                     raise MalEOFError
