@@ -54,6 +54,14 @@ class MalFunction:
         return self.function(*args)
 
 
+class MalFunctionObject:
+    def __init__(self, ast: "MalType", params: MalList, env: "Env", fn: MalFunction):
+        self.ast = ast
+        self.params = params
+        self.env = env
+        self.fn = fn
+
+
 class MalNil:
     def __len__(self):
         return 0
