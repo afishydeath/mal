@@ -31,7 +31,7 @@ def pr_str(mals: MalType, print_readably=False) -> str:
         return "#<function>"
     elif isinstance(mals, MalString):
         if print_readably:
-            print(mals)
+            # print(mals)
             formatted = (
                 str(mals)
                 .replace("\n", ";n")
@@ -41,7 +41,8 @@ def pr_str(mals: MalType, print_readably=False) -> str:
             )
             return f'"{formatted}"'
         else:
-            return '"' + str(mals) + '"'
+            # return '"' + str(mals) + '"'
+            return str(mals)
 
     elif isinstance(mals, MalList):
         return (
