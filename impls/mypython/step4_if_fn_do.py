@@ -68,6 +68,8 @@ def EVAL(ast: MalType, env):
 
                 def closure(*args: MalType):
                     c_env = Env(env, binds=ast[1], exprs=args)  # type: ignore
+                    print(c_env.data, ast)
+                    input()
                     return EVAL(ast[2], c_env)
 
                 return MalFunction(closure)
