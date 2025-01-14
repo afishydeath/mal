@@ -31,6 +31,7 @@ def pr_str(mals: MalType, print_readably=False) -> str:
         return "#<function>"
     elif isinstance(mals, MalString):
         if print_readably:
+            print(mals)
             formatted = (
                 str(mals)
                 .replace("\n", ";n")
@@ -43,9 +44,17 @@ def pr_str(mals: MalType, print_readably=False) -> str:
             return '"' + str(mals) + '"'
 
     elif isinstance(mals, MalList):
-        return "(" + " ".join([pr_str(mal) for mal in mals]) + ")"
+        return (
+            "("
+            + " ".join([pr_str(mal, print_readably=print_readably) for mal in mals])
+            + ")"
+        )
     elif isinstance(mals, MalVector):
-        return "[" + " ".join([pr_str(mal) for mal in mals]) + "]"
+        return (
+            "["
+            + " ".join([pr_str(mal, print_readably=print_readably) for mal in mals])
+            + "]"
+        )
     elif isinstance(mals, MalHashMap):
         return (
             "{"
