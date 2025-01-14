@@ -31,28 +31,16 @@ def pr_str(mals: MalType, print_readably=False) -> str:
         return "#<function>"
     elif isinstance(mals, MalString):
         if print_readably:
-            return '"' + str(mals) + '"'
+            formatted = (
+                str(mals)
+                .replace("\n", ";n")
+                .replace('"', ';"')
+                .replace("\\", ";;")
+                .replace(";", "\\")
+            )
+            return f'"{formatted}"'
         else:
-            formatted = ""
-            escaped = False
-            for i in range(len(mals)):
-                if escaped:
-                    escaped = False
-                else:
-                    if mals[i] != "\\":
-                        formatted += mals[i]
-                    else:
-                        escaped = True
-                        match mals[i + 1]:
-                            case "n":
-                                formatted += "\n"
-                            case "\\":
-                                formatted += "\\"
-                            case '"':
-                                formatted += '"'
-                            case _:
-                                raise Exception("escaped non-handled character")
-            return formatted
+            return '"' + str(mals) + '"'
 
     elif isinstance(mals, MalList):
         return "(" + " ".join([pr_str(mal) for mal in mals]) + ")"

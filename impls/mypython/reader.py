@@ -119,10 +119,20 @@ def read_atom(reader: Reader) -> MalType:
     elif next[0] == ":":
         return MalKeyword(next[1:])
     elif next[0] == '"':
-        pattern = r'"(?:[^\\\n]|\\\\|\\"|\\n)*"'
-        if re.match(pattern, next):
-            return MalString(next[1:-1])
-        else:
-            raise MalEOFError
+        replace = {"\\n": "\n", "\\\\": "\\", '\\"': '"'}
+        formatted = ""
+        skip = False
+        for p in range(1, len(next) - 1):
+            print(next[p])
+            if skip:
+                if p == len(next):
+                    raise MalEOFError
+                skip = False
+            elif next[p : p + 2] in replace.keys():
+                formatted += replace[next[p : p + 2]]
+                skip = True
+            else:
+                formatted += next[p]
+        return MalString(formatted)
     else:
         return MalSymbol(next)
