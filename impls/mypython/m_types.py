@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Callable, Dict, List
 import enum
 import re
 
@@ -79,4 +79,15 @@ class Boolean(enum.Enum):
         return "true" if self.value else "false"
 
 
-Form = List_ | Vector | Map | String | Symbol | Keyword | Number | Nil | Boolean
+class Fn:
+    def __init__(self, impl: "Form", params: List_ | Vector, env, fn: Callable):
+        self.impl = impl
+        self.params = params
+        self.env = env
+        self.fn = fn
+
+    def __call__(self):
+        return self.fn()
+
+
+Form = List_ | Vector | Map | String | Symbol | Keyword | Number | Nil | Boolean | Fn
