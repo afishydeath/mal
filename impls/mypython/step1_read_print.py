@@ -1,20 +1,30 @@
+from errors import m_EOFError
+from m_types import Form
 from m_readline import input_
+from reader import read_str
 
 
-def read(text):
-    return text
-
-
-def eval_(ast, env):
+def read(text: str) -> Form | None:
+    ast = read_str(text)
     return ast
 
 
-def print_(exp):
-    return exp
+def eval_(ast: Form, env) -> Form:
+    return ast
 
 
-def rep(text):
-    return print_(eval_(read(text), ""))
+def print_(exp: Form) -> str:
+    text = exp.__str__()
+    return text
+
+
+def rep(text: str) -> str | None:
+    ast = read(text)
+    if ast is None:
+        return None
+    exp = eval_(ast, "")
+    text = print_(exp)
+    return text
 
 
 def main():
@@ -22,7 +32,10 @@ def main():
         try:
             print(rep(input_("user> ")))
         except EOFError:
+            print()
             break
+        except m_EOFError as e:
+            print("EOF", e.args)
 
 
 if __name__ == "__main__":

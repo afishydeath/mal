@@ -16,30 +16,47 @@ from m_types import (
 from errors import m_EOFError
 
 tokens = (
-    r"(?whitespace:(?:[\s,]|;[^\n\r]*)+)"
-    + r'(?string:"(?:(?:[^"\\]|\\.)*")?)'
-    + r"(?list_start:\()"
-    + r"(?vector_start:\()"
-    + r"(?map_start:\{)"
-    + r"(?macro:['`@]|~@?)"
-    + r"(?close_bracket:[])}])"
-    + r"(?number:-?\d+)"
-    + r"""(?symbol:[^]\s"'(),;@[^`{}~]+)"""
+    r"(?P<whitespace>(?:[\s,]|;[^\n\r]*)+)"
+    + "|"
+    + r'(?P<string>"(?:(?:[^"\\]|\\.)*")?)'
+    + "|"
+    + r"(?P<list_start>\()"
+    + "|"
+    + r"(?P<vector_start>\[)"
+    + "|"
+    + r"(?P<map_start>\{)"
+    + "|"
+    + r"(?P<macro>['`@]|~@?)"
+    + "|"
+    + r"(?P<meta>\^)"
+    + "|"
+    + r"(?P<close_bracket>[])}])"
+    + "|"
+    + r"(?P<number>-?\d+)"
+    + "|"
+    + r"""(?P<symbol>[^]\s"'(),;@[^`{}~]+)"""
 )
 pattern: Pattern = re.compile(tokens)
 
 
 class Reader:
     def __init__(self, tokens: Iterator[Match[str]]) -> None:
-        self._tokens = tokens
-        self._next: Match[str] | None = next(self._tokens)
+        self._tokens = (token for token in tokens if token.lastgroup != "whitespace")
+        try:
+            self._next: Match[str] | None = next(self._tokens)
+        except StopIteration:
+            self._next = None
 
     def peek(self) -> Match[str] | None:
         return self._next
 
     def next(self) -> Match[str] | None:
-        self._next = next(self._tokens)
-        return self._next
+        old = self._next
+        try:
+            self._next = next(self._tokens)
+        except StopIteration:
+            self._next = None
+        return old
 
 
 def read_str(text: str) -> Form | None:
@@ -55,7 +72,7 @@ def tokenize(text: str) -> Iterator[Match[str]]:
 
 def read_form(reader: Reader) -> Form | None:
     if first := reader.peek():
-        match first.string[first.start() : first.end() - 1]:
+        match first.string[first.start() : first.end()]:
             case "(":
                 return read_list(reader)
             case "[":
@@ -67,11 +84,13 @@ def read_form(reader: Reader) -> Form | None:
 
 
 def read_sequential(reader: Reader, end: str) -> List[Form]:
+    reader.next()
     contents: List[Form] = []
-    while (next := reader.peek()) and next.string[next.start() : next.end() - 1] != end:
-        if to_add := read_form(reader):
+    while (next := reader.peek()) and next.string[next.start() : next.end()] != end:
+        if (to_add := read_form(reader)) is not None:
             contents.append(to_add)
     if next:
+        reader.next()
         return contents
     raise m_EOFError("eof while parseing sequential")
 
@@ -92,7 +111,7 @@ escapes = {"\\\\": "\\", '\\"': '"', "\\n": "\n"}
 
 
 def unescape(text: str) -> str:
-    return re.sub(r"\\.", lambda x: escapes[x.string[x.start() : x.end() - 1]], text)
+    return re.sub(r"\\.", lambda x: escapes[x.string[x.start() : x.end()]], text)
 
 
 macros = {
@@ -109,16 +128,26 @@ def read_atom(reader: Reader) -> Form | None:
     if next is None:
         return None
     start, end = next.span()
-    text: str = next.string[start : end - 1]
+    text: str = next.string[start:end]
     match next.lastgroup:
         case "whitespace":
             return None
         case "string":
-            if start - end == 1:
-                raise m_EOFError
+            if end - start == 1:
+                raise m_EOFError("eof while parseing string")
             return String(unescape(text))
         case "macro":
-            return Symbol(macros[text])
+            if (quoted := read_form(reader)) is not None:
+                return List_([Symbol(macros[text]), quoted])
+            else:
+                raise Exception("quoted missing")
+        case "meta":
+            if (meta := read_form(reader)) is not None and (
+                content := read_form(reader)
+            ) is not None:
+                return List_([Symbol("with-meta"), content, meta])
+            else:
+                raise Exception("with meta failed")
         case "number":
             return Number(text)
         case "symbol":
@@ -133,5 +162,5 @@ def read_atom(reader: Reader) -> Form | None:
                     if text.startswith(":"):
                         return Keyword(text[1:])
                     return Symbol(text)
-        case _:
-            raise Exception("unhandled match group")
+        case x:
+            raise Exception(f"unhandled match group {x}")

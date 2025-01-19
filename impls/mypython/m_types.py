@@ -4,11 +4,13 @@ import re
 
 
 class List_(List["Form"]):
-    pass
+    def __str__(self, readably=True) -> str:
+        return "(" + (" ".join([x.__str__(readably=readably) for x in self])) + ")"
 
 
 class Vector(List["Form"]):
-    pass
+    def __str__(self, readably=True) -> str:
+        return "[" + (" ".join([x.__str__(readably=readably) for x in self])) + "]"
 
 
 class Map(Dict["Form", "Form"]):
@@ -18,38 +20,66 @@ class Map(Dict["Form", "Form"]):
             if key:
                 self[key] = form
                 key = None
-            elif isinstance(form, (Keyword, Symbol)):
-                key = form
             else:
-                raise Exception("invalid key")
+                key = form
         if key:
             raise Exception(f"odd mappings, no val for {key}")
         return self
 
+    def __str__(self, readably=True) -> str:
+        to_join: List[str] = []
+        for x in self:
+            to_join.append(x.__str__(readably=readably))
+            to_join.append(self[x].__str__(readably=readably))
+        return "{" + " ".join(to_join) + "}"
+
+
+subs = {"\\": "\\\\", "\n": "\\n", '"': '\\"'}
+
 
 class String(str):
-    pass
+    def __str__(self, readably=True) -> str:
+        text = super().__str__()[1:-1]
+        if readably:
+            return (
+                '"'
+                + re.sub(
+                    r'[\\\n"]', lambda x: subs[x.string[x.start() : x.end()]], text
+                )
+                + '"'
+            )
+        else:
+            return text
 
 
 class Symbol(str):
-    pass
+    def __str__(self, readably=True) -> str:
+        return self
 
 
 class Keyword(str):
-    pass
+    def __str__(self, readably=True) -> str:
+        return ":" + self
 
 
 class Number(int):
-    pass
+    def __str__(self, readably=True) -> str:
+        return super().__str__()
 
 
 class Nil(enum.Enum):
     NIL = None
 
+    def __str__(self, readably=True) -> str:
+        return "nil"
+
 
 class Boolean(enum.Enum):
     TRUE = True
     FALSE = False
+
+    def __str__(self, readably=True) -> str:
+        return "true" if self.value else "false"
 
 
 Form = List_ | Vector | Map | String | Symbol | Keyword | Number | Nil | Boolean

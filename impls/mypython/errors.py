@@ -1,2 +1,2 @@
-class m_EOFError(EOFError):
+class m_EOFError(Exception):
     pass
