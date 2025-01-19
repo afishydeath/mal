@@ -39,15 +39,9 @@ subs = {"\\": "\\\\", "\n": "\\n", '"': '\\"'}
 
 class String(str):
     def __str__(self, readably=True) -> str:
-        text = super().__str__()[1:-1]
+        text = super().__str__()
         if readably:
-            return (
-                '"'
-                + re.sub(
-                    r'[\\\n"]', lambda x: subs[x.string[x.start() : x.end()]], text
-                )
-                + '"'
-            )
+            return f'"{re.sub(r'[\\"\n]', lambda x: subs[x.group()], text)}"'
         else:
             return text
 
@@ -72,6 +66,9 @@ class Nil(enum.Enum):
 
     def __str__(self, readably=True) -> str:
         return "nil"
+
+    def __len__(self) -> int:
+        return 0
 
 
 class Boolean(enum.Enum):

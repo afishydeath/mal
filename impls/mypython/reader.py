@@ -135,7 +135,7 @@ def read_atom(reader: Reader) -> Form | None:
         case "string":
             if end - start == 1:
                 raise m_EOFError("eof while parseing string")
-            return String(unescape(text))
+            return String(unescape(text[1:-1]))
         case "macro":
             if (quoted := read_form(reader)) is not None:
                 return List_([Symbol(macros[text]), quoted])
