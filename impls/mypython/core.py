@@ -1,4 +1,5 @@
 from m_types import Boolean, List_, Number, Nil, String
+from reader import read_str
 
 ns = {
     "+": lambda a, b: Number(a + b),
@@ -19,4 +20,6 @@ ns = {
     "<=": lambda a, b: Boolean.TRUE if a <= b else Boolean.FALSE,
     ">": lambda a, b: Boolean.TRUE if a > b else Boolean.FALSE,
     ">=": lambda a, b: Boolean.TRUE if a >= b else Boolean.FALSE,
+    "read-string": lambda a: read_str(a),
+    "slurp": lambda a: String(open(a).read()),
 }
