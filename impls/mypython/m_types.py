@@ -86,8 +86,38 @@ class Fn:
         self.env = env
         self.fn = fn
 
-    def __call__(self):
-        return self.fn()
+    def __call__(self, *args):
+        return self.fn(*args)
+
+    def __str__(self, readably=True) -> str:
+        return f"#function {self.params} -> {self.impl}"
 
 
-Form = List_ | Vector | Map | String | Symbol | Keyword | Number | Nil | Boolean | Fn
+class Atom:
+    def __init__(self, content: "Form") -> None:
+        self.content = content
+
+    def __str__(self, readably=True) -> str:
+        return f"(atom {self.content})"
+
+    def set(self, new_content: "Form") -> "Form":
+        self.content = new_content
+        return new_content
+
+    def get(self) -> "Form":
+        return self.content
+
+
+Form = (
+    List_
+    | Vector
+    | Map
+    | String
+    | Symbol
+    | Keyword
+    | Number
+    | Nil
+    | Boolean
+    | Fn
+    | Atom
+)

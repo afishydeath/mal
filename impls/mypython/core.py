@@ -1,4 +1,4 @@
-from m_types import Boolean, List_, Number, Nil, String
+from m_types import Atom, Boolean, List_, Number, Nil, String
 from reader import read_str
 
 ns = {
@@ -22,4 +22,9 @@ ns = {
     ">=": lambda a, b: Boolean.TRUE if a >= b else Boolean.FALSE,
     "read-string": lambda a: read_str(a),
     "slurp": lambda a: String(open(a).read()),
+    "atom": lambda a: Atom(a),
+    "atom?": lambda a: Boolean.TRUE if isinstance(a, Atom) else Boolean.FALSE,
+    "deref": lambda a: a.get(),
+    "reset!": lambda a, b: a.set(b),
+    "swap!": lambda a, b, *c: a.set(b(a.get(), *c)),
 }

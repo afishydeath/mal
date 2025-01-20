@@ -5,6 +5,7 @@ from env import Env
 from m_readline import input_
 from reader import read_str
 from core import ns
+import sys
 
 repl_env = Env(
     None,
@@ -101,9 +102,9 @@ def eval_(ast: Form, env: Env) -> Form | Callable:
                                 continue
                             return f(*args)
                         else:
-                            raise Exception("calllable not callable")
+                            return ast
                     case _:
-                        raise Exception("no match inside list match")
+                        return ast
 
             case Vector():
                 return Vector([eval_(x, env) for x in ast])  # type: ignore
@@ -150,4 +151,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        rep(f"(def! *ARGV* ({' '.join([f'"{x}"' for x in sys.argv[2:]])}))")
+        rep(f'(load-file "{sys.argv[1]}")')
+    else:
+        rep("(def! *ARGV* ())")
+        main()

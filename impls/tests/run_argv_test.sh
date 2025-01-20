@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
 #
 # Usage: run_argv_test.sh <command line arguments to run mal>
