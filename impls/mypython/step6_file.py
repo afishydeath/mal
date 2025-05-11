@@ -102,9 +102,9 @@ def eval_(ast: Form, env: Env) -> Form | Callable:
                                 continue
                             return f(*args)
                         else:
-                            return ast
+                            raise Exception(f"callable {callable} is no Callable")
                     case _:
-                        return ast
+                        raise Exception(f"ast {ast} did no match a list pattern")
 
             case Vector():
                 return Vector([eval_(x, env) for x in ast])  # type: ignore
