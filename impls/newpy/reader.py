@@ -6,7 +6,7 @@ token_pattern = re.compile(
 )
 atom_pattern = re.compile(
     (
-        r"""(?P<int>-\d+)"""
+        r"""(?P<int>-?\d+)"""
         "|"
         r"""(?P<symbol>.*)"""
     )
@@ -38,7 +38,11 @@ def read_str(string: str) -> MalType:
 
 
 def tokenise(string) -> list:
-    return token_pattern.findall(string)[:-1]
+    tokens = []
+    for token in token_pattern.findall(string):
+        if token:
+            tokens.append(token)
+    return tokens
 
 
 def read_form(reader: Reader) -> MalType:
