@@ -208,8 +208,19 @@ def malBool(cond) -> MalBoolean:
     return MalTrue() if cond else MalFalse()
 
 
-class _Fn(Protocol):
-    def __call__(self, *args: MalType) -> MalType: ...
+class _Fn1(Protocol):
+    def __call__(self, a: MalType) -> MalType: ...
+
+
+class _Fn2(Protocol):
+    def __call__(self, a: MalType, b: MalType) -> MalType: ...
+
+
+class _Fn_(Protocol):
+    def __call__(self, *a: MalType) -> MalType: ...
+
+
+_Fn = _Fn1 | _Fn2 | _Fn_
 
 
 class MalFn(MalType):
@@ -231,6 +242,14 @@ class MalFnTCO(MalType):
         self.params = params
         self.env = env
         self.fn = fn
+
+
+class MalAtom(MalType):
+    def __init__(self, value: MalType):
+        self.value: MalType = value
+
+    def __str__(self, readably=False):
+        return MalList([MalSymbol("atom"), self.value]).__str__(readably=readably)
 
 
 class EOFError_(Exception):

@@ -1,4 +1,7 @@
 from types_ import (
+    MalAtom,
+    MalFn,
+    MalFnTCO,
     MalString,
     malBool,
     MalBoolean,
@@ -7,6 +10,7 @@ from types_ import (
     MalNumber,
     MalType,
 )
+from reader import read_str
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,6 +55,15 @@ def println(*a: MalType) -> MalNil:
     return MalNil()
 
 
+def read_string(a: MalString) -> MalType:
+    return read_str(a.value)
+
+
+def slurp(a: MalString) -> MalString:
+    with open(a.value, "r") as f:
+        return MalString(f.read())
+
+
 def list_(*a: MalType) -> MalList:
     return MalList(list(a))
 
@@ -88,6 +101,34 @@ def ge(a: MalType, b: MalType) -> MalBoolean:
     return malBool(a >= b)
 
 
+def atom(a: MalType) -> MalAtom:
+    return MalAtom(a)
+
+
+def is_atom(a: MalType) -> MalBoolean:
+    return malBool(isinstance(a, MalAtom))
+
+
+def deref(a: MalAtom) -> MalType:
+    return a.value
+
+
+def reset(a: MalAtom, b: MalType) -> MalType:
+    a.value = b
+    return b
+
+
+def swap(a: MalAtom, b: MalFn | MalFnTCO, *c: MalType) -> MalType:
+    match b:
+        case MalFn():
+            a.value = b(a.value, *c)
+        case MalFnTCO():
+            a.value = b.fn(a.value, *c)
+        case _:
+            raise TypeError(f"Value {b} is not callable.")
+    return a.value
+
+
 ns = {
     "+": add,
     "-": sub,
@@ -97,6 +138,8 @@ ns = {
     "pr-str": pr_str_,
     "str": str_,
     "println": println,
+    "read-string": read_string,
+    "slurp": slurp,
     "list": list_,
     "list?": is_list,
     "empty?": is_empty,
@@ -106,4 +149,9 @@ ns = {
     "<=": le,
     ">": gt,
     ">=": ge,
+    "atom": atom,
+    "atom?": is_atom,
+    "deref": deref,
+    "reset!": reset,
+    "swap!": swap,
 }

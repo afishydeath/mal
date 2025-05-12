@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 token_pattern = re.compile(
-    r"""[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)"""
+    r"""[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|[^\s\[\]{}('"`,;)]*)|(?:;.*)"""
 )
 atom_pattern = re.compile(
     "|".join(
@@ -32,6 +32,7 @@ atom_pattern = re.compile(
             r"""(?P<macro>~@|['`~@])""",
             r"""(?P<meta>\^)""",
             r"""(?P<keyword>:.*)""",
+            r"""(?P<comment>;.*)""",
             r"""(?P<symbol>.*)""",
         ]
     )
@@ -73,7 +74,7 @@ def tokenise(string) -> list:
 
 
 def read_form(reader: Reader) -> MalType:
-    # logger.info(reader)
+    logger.info(reader)
     peek = reader.peek()
     if peek[0] in ("(", "[", "{"):
         return read_list(reader, peek[0])
