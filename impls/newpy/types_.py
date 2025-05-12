@@ -1,19 +1,22 @@
 import re
 import logging
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
 
 class MalType:
-    value: str | int | list | None = None
+    value: str | int | list | Callable | None = None
 
-    def __str__(self, readably=False):
+    __match_args__ = ("value",)
+
+    def __str__(self, readably=False) -> str:
         return str(self.value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self)}({repr(self.value)})"
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.value == other.value
 
 
@@ -22,7 +25,15 @@ class MalSequence(MalType):
     start: str = ""
     end: str = ""
 
-    def __str__(self, readably=False):
+    def __init__(self, *args):
+        if args and len(args) == 1:
+            self.value: list[MalType] = args[0]
+        elif args:
+            raise TypeError(f"Too many arguments {args}")
+        else:
+            self.value = []
+
+    def __str__(self, readably=False) -> str:
         # logger.info(self.value)
         return (
             self.start
@@ -30,56 +41,89 @@ class MalSequence(MalType):
             + self.end
         )
 
+    def append(self, item: MalType) -> None:
+        self.value.append(item)
+
+    def __getitem__(self, pos) -> MalType:
+        return self.value[pos]
+
 
 class MalList(MalSequence):
     start = "("
     end = ")"
-
-    def __init__(self, value: list[MalType]):
-        self.value: list[MalType] = value
-
-    def append(self, item: MalType):
-        self.value.append(item)
 
 
 class MalVector(MalSequence):
     start = "["
     end = "]"
 
-    def __init__(self, value: list[MalType]):
-        self.value: list[MalType] = value
 
-    def append(self, item: MalType):
-        self.value.append(item)
+class MalMap(MalType):
+    def __init__(self, *args):
+        if args and len(args) == 1:
+            logger.info(args)
+            self.value: dict[MalType, MalType] = args[0]
+        elif args:
+            raise TypeError(f"Too many arguments {args}")
+        else:
+            self.value = {}
 
+    def __setitem__(self, key, value) -> None:
+        self.value[key] = value
 
-class MalMap(MalSequence):
-    start = "{"
-    end = "}"
+    def __getitem__(self, key) -> MalType:
+        return self.value[key]
 
-    def __init__(self, value: list[MalType]):
-        self.value: list[MalType] = value
+    def __iter__(self):
+        return self.value.__iter__()
 
-    def append(self, item: MalType):
-        self.value.append(item)
+    def __str__(self, readably=False) -> str:
+        return (
+            "{"
+            + " ".join(
+                [
+                    " ".join([y.__str__(readably=readably) for y in x])
+                    for x in self.value.items()
+                ]
+            )
+            + "}"
+        )
 
 
 class MalNumber(MalType):
     def __init__(self, value: int):
         self.value = value
 
+    def __add__(self, other):
+        return MalNumber(self.value + other.value)
+
+    def __sub__(self, other):
+        return MalNumber(self.value - other.value)
+
+    def __mul__(self, other):
+        return MalNumber(self.value * other.value)
+
+    def __floordiv__(self, other):
+        return MalNumber(self.value // other.value)
+
 
 class MalSymbol(MalType):
     def __init__(self, value: str):
         self.value = value
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class MalKeyword(MalType):
     def __init__(self, value: str):
         self.value: str = value[1:]
 
-    def __str__(self, readably=False):
+    def __str__(self, readably=False) -> str:
         return ":" + self.value
+
+    def __hash__(self) -> int:
+        return hash(f"\0{self.value}")
 
 
 class MalString(MalType):
@@ -99,12 +143,15 @@ class MalString(MalType):
             r'"|\n|\\', lambda m: self.PARSE[m.string[m.start() : m.end()]], value
         )
 
-    def __str__(self, readably=False):
+    def __str__(self, readably=False) -> str:
         if readably:
             out = self.escape(self.value)
         else:
             out = self.value
         return '"' + out + '"'
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class MalNil(MalType):
@@ -121,6 +168,14 @@ class MalTrue(MalBoolean):
 
 class MalFalse(MalBoolean):
     value = "false"
+
+
+class MalFn(MalType):
+    def __init__(self, value: Callable):
+        self.value: Callable = value
+
+    def __call__(self, *args, **kwargs):
+        return self.value(*args, **kwargs)
 
 
 class EOFError_(Exception):

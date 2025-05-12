@@ -73,7 +73,7 @@ def tokenise(string) -> list:
 
 
 def read_form(reader: Reader) -> MalType:
-    logger.info(reader)
+    # logger.info(reader)
     peek = reader.peek()
     if peek[0] in ("(", "[", "{"):
         return read_list(reader, peek[0])
@@ -87,12 +87,26 @@ TYPE = {"(": MalList, "[": MalVector, "{": MalMap}
 
 def read_list(reader: Reader, start: str) -> MalList:
     reader.next()
-    running_list = TYPE[start]([])
+    running = TYPE[start]()
     tok = read_form(reader)
+    map = start == "{"
+    if map:
+        key_flag = True
+        key: MalType = MalNil()
     while tok != MalSymbol(END[start]):
-        running_list.append(tok)
+        if map:
+            if key_flag:
+                key_flag = False
+                key = tok
+            else:
+                key_flag = True
+                running[key] = tok
+        else:
+            running.append(tok)
         tok = read_form(reader)
-    return running_list
+    if map and not key_flag:
+        raise EOFError_(f"EOF unmatched key value in map {running}")
+    return running
 
 
 MACROS = {
@@ -106,9 +120,9 @@ MACROS = {
 
 def read_atom(reader: Reader) -> MalType:
     token = reader.next()
-    logger.info(token)
+    # logger.info(token)
     m = atom_pattern.fullmatch(token)
-    logger.info(m)
+    # logger.info(m)
     if not m:
         raise Exception(f"atom match failed on {token}")
 
@@ -134,7 +148,7 @@ def read_atom(reader: Reader) -> MalType:
         case "keyword":
             return MalKeyword(token)
         case "symbol":
-            logger.info(token)
+            # logger.info(token)
             return MalSymbol(token)
         case _:
             raise Exception(f"atom matched pattern, but had no group on {token}")
