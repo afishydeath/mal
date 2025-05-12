@@ -224,5 +224,14 @@ class MalFn(MalType):
         return "#<function>"
 
 
+class MalFnTCO(MalType):
+    def __init__(self, ast: MalType, params: MalList[MalSymbol], env, fn: MalFn):
+        self.value = "#<functionwithtco>"
+        self.ast = ast
+        self.params = params
+        self.env = env
+        self.fn = fn
+
+
 class EOFError_(Exception):
     pass
