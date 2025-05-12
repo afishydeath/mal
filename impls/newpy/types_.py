@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class MalType:
-    value: str | int | list | Callable | None = None
+    value: str | int | list | Callable
 
     __match_args__ = ("value",)
 
@@ -18,6 +18,9 @@ class MalType:
 
     def __eq__(self, other) -> bool:
         return self.value == other.value
+
+    def __bool__(self) -> bool:
+        return True
 
 
 class MalSequence(MalType):
@@ -44,8 +47,14 @@ class MalSequence(MalType):
     def append(self, item: MalType) -> None:
         self.value.append(item)
 
-    def __getitem__(self, pos) -> MalType:
-        return self.value[pos]
+    def __contains__(self, key) -> bool:
+        return key in self.value
+
+    def __getitem__(self, key) -> MalType:
+        return self.value[key]
+
+    def __len__(self) -> int:
+        return len(self.value)
 
 
 class MalList(MalSequence):
@@ -74,8 +83,11 @@ class MalMap(MalType):
     def __getitem__(self, key) -> MalType:
         return self.value[key]
 
-    def __iter__(self):
-        return self.value.__iter__()
+    def __contains__(self, key) -> bool:
+        return key in self.value
+
+    def __len__(self) -> int:
+        return len(self.value)
 
     def __str__(self, readably=False) -> str:
         return (
@@ -123,7 +135,7 @@ class MalKeyword(MalType):
         return ":" + self.value
 
     def __hash__(self) -> int:
-        return hash(f"\0{self.value}")
+        return hash(":" + self.value)
 
 
 class MalString(MalType):
@@ -150,12 +162,18 @@ class MalString(MalType):
             out = self.value
         return '"' + out + '"'
 
+    def __len__(self) -> int:
+        return len(self.value)
+
     def __hash__(self) -> int:
-        return hash(self.value)
+        return hash('"' + self.value)
 
 
 class MalNil(MalType):
     value = "nil"
+
+    def __bool__(self) -> bool:
+        return False
 
 
 class MalBoolean(MalType):
@@ -168,6 +186,9 @@ class MalTrue(MalBoolean):
 
 class MalFalse(MalBoolean):
     value = "false"
+
+    def __bool__(self) -> bool:
+        return False
 
 
 class MalFn(MalType):

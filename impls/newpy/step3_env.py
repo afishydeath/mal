@@ -1,13 +1,15 @@
 from types_ import (
-    MalFalse,
     MalFn,
+    MalKeyword,
     MalList,
     MalMap,
     MalNil,
+    MalString,
     MalSymbol,
     MalType,
     MalVector,
 )
+from env import Env
 from readline_ import input_
 import reader
 import printer
@@ -22,7 +24,10 @@ tmp = {
     "*": lambda a, b: a * b,
     "/": lambda a, b: a // b,
 }
-repl_env = {MalSymbol(s): MalFn(tmp[s]) for s in tmp.keys()}
+
+repl_env = Env(MalNil())
+for k in tmp:
+    repl_env.set(MalSymbol(k), MalFn(tmp[k]))
 
 
 def READ(string: str) -> MalType:
@@ -32,32 +37,51 @@ def READ(string: str) -> MalType:
 
 
 def EVAL(ast: MalType, env) -> MalType:
-    if "DEBUG-EVAL" in env and env["DEBUG-EVAL"] not in [MalNil(), MalFalse()]:
-        print(f"Eval: {printer.pr_str(ast, readably=True)}")
+    if MalSymbol("DEBUG-EVAL") in env and env.get(MalSymbol("DEBUG-EVAL")):
+        print(f"EVAL: {printer.pr_str(ast, readably=True)}")
     match ast:
         case MalSymbol():
             if ast in env:
-                return env[ast]
+                return env.get(ast)
             else:
-                raise KeyError(f"Value {ast} not in env {env}")
+                raise KeyError(f"{ast} not found in {env}")
 
         case MalList([]):
             return ast
 
-        case MalList():
-            f = EVAL(ast[0], env)
+        case MalList([MalSymbol("def!"), key, value]):
+            env.set(key, tmp := EVAL(value, env))
+            return tmp
+
+        case MalList([MalSymbol("let*"), MalList() | MalVector() as bindings, body]):
+            new_env = Env(env)
+            key_flag = True
+            key: MalType = MalNil()
+            for item in bindings:
+                if key_flag:
+                    key = item
+                    key_flag = False
+                else:
+                    if isinstance(key, MalSymbol):
+                        new_env.set(key, EVAL(item, new_env))
+                        key_flag = True
+                    else:
+                        raise KeyError(f"key {key} is not a symbol")
+            if not key_flag:
+                raise KeyError(f"Uneven key value pairs for definitions {bindings}")
+            return EVAL(body, new_env)
+
+        case MalList([first, *rest]):
+            f = EVAL(first, env)
             if not isinstance(f, MalFn):
                 raise KeyError(f"Value {f} is not callable")
-            return f(*[EVAL(x, env) for x in ast[1:]])
+            return f(*[EVAL(x, env) for x in rest])
 
         case MalVector():
             return MalVector([EVAL(x, env) for x in ast])
 
         case MalMap():
-            tmp_map = MalMap()
-            for key in ast:
-                tmp_map[key] = EVAL(ast[key], env)
-            logger.info(tmp_map)
+            tmp_map = MalMap({key: EVAL(ast[key], env) for key in ast})
             return tmp_map
 
         case _:
