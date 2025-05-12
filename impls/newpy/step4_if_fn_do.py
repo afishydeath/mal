@@ -24,7 +24,7 @@ repl_env = Env(MalNil(), _binds, _exprs)
 
 def READ(string: str) -> MalType:
     ast = reader.read_str(string)
-    logger.info(repr(ast))
+    # logger.info(repr(ast))
     return ast
 
 
@@ -46,18 +46,17 @@ def EVAL(ast: MalType, env) -> MalType:
             return tmp
 
         case MalList([MalSymbol("let*"), MalList() | MalVector() as bindexpr, body]):
-            binds: MalList[MalSymbol] = MalList[MalSymbol]()
-            exprs: MalList = MalList()
+            _env = Env(env, MalList(), MalList())
             key_flag = True
+            key: MalSymbol
             for item in bindexpr:
                 if key_flag:
-                    binds.append(item)
+                    key = item
                     key_flag = False
                 else:
-                    exprs.append(item)
+                    _env.set(key, EVAL(item, _env))
                     key_flag = True
-            new_env = Env(env, binds, exprs)
-            return EVAL(body, new_env)
+            return EVAL(body, _env)
 
         case MalList([MalSymbol("do"), *rest]):
             last: MalType = MalNil()
@@ -78,8 +77,11 @@ def EVAL(ast: MalType, env) -> MalType:
                 return EVAL(otherwise, env)
 
         case MalList([MalSymbol("fn*"), binds, do]):
+            # logger.info(binds)
+            # logger.info(do)
 
-            def closure(*exprs: MalType):
+            def closure(*exprs: MalType) -> MalType:
+                # logger.info(exprs)
                 return EVAL(do, Env(env, binds, MalList(exprs)))
 
             return MalFn(closure)
@@ -103,13 +105,15 @@ def EVAL(ast: MalType, env) -> MalType:
 
 def PRINT(exp: MalType) -> str:
     string = printer.pr_str(exp, readably=True)
-    logger.info(string)
+    # logger.info(string)
     return string
 
 
 def rep(string):
     return PRINT(EVAL(READ(string), repl_env))
 
+
+rep("(def! not (fn* (a) (if a false true)))")
 
 if __name__ == "__main__":
     while True:

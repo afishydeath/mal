@@ -136,7 +136,9 @@ def read_atom(reader: Reader) -> MalType:
         case "nil":
             return MalNil()
         case "goodstring":
-            return MalString(token[1:-1])
+            s = MalString(token[1:-1])
+            logger.info(s)
+            return s
         case "badstring":
             raise EOFError_(f"EOF unclosed string at {token}")
         case "macro":

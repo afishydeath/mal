@@ -14,6 +14,9 @@ class Env:
         self.outer = outer
         self.data = MalMap()
         for p in range(len(binds)):
+            if binds[p] == MalSymbol("&"):
+                self.set(binds[p + 1], MalList(exprs[p:]))
+                break
             self.set(binds[p], exprs[p])
 
     def set(self, key: MalSymbol, value: MalType) -> None:

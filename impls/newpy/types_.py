@@ -1,6 +1,7 @@
 import re
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
+from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,18 @@ class MalType:
     def __eq__(self, other) -> bool:
         return self.value == other.value
 
+    def __lt__(self, other) -> bool:
+        return self.value < other.value
+
+    def __le__(self, other) -> bool:
+        return self.value <= other.value
+
+    def __gt__(self, other) -> bool:
+        return self.value > other.value
+
+    def __ge__(self, other) -> bool:
+        return self.value >= other.value
+
     def __bool__(self) -> bool:
         return True
 
@@ -28,9 +41,10 @@ class MalSequence[T: MalType](MalType):
     start: str = ""
     end: str = ""
 
-    def __init__(self, *args):
+    def __init__(self, *args: Iterable[T]):
+        # logger.info(args)
         if args and len(args) == 1:
-            self.value: list[T] = args[0]
+            self.value: list[T] = list(args[0])
         elif args:
             raise TypeError(f"Too many arguments {args}")
         else:
@@ -69,9 +83,9 @@ class MalVector[T: MalType](MalSequence):
 
 
 class MalMap(MalType):
-    def __init__(self, *args):
+    def __init__(self, *args: dict[MalType, MalType]):
         if args and len(args) == 1:
-            logger.info(args)
+            # logger.info(args)
             self.value: dict[MalType, MalType] = args[0]
         elif args:
             raise TypeError(f"Too many arguments {args}")
@@ -147,14 +161,10 @@ class MalString(MalType):
         self.value: str = self.parse(value)
 
     def parse(self, value: str) -> str:
-        return re.sub(
-            r"\\.", lambda m: self.ESCAPE[m.string[m.start() : m.end()]], value
-        )
+        return re.sub(r"\\.", lambda m: self.ESCAPE[m.group()], value)
 
     def escape(self, value: str) -> str:
-        return re.sub(
-            r'"|\n|\\', lambda m: self.PARSE[m.string[m.start() : m.end()]], value
-        )
+        return re.sub(r'["\n\\]', lambda m: self.PARSE[m.group()], value)
 
     def __str__(self, readably=False) -> str:
         if readably:
@@ -176,32 +186,30 @@ class MalNil(MalType):
     def __bool__(self) -> bool:
         return False
 
+    def __len__(self) -> int:
+        return 0
+
 
 class MalBoolean(MalType):
-    def __init__(self, cond):
-        if cond:
-            return MalTrue()
-        return MalFalse()
+    pass
 
 
 class MalTrue(MalBoolean):
     value = "true"
 
-    def __init__(self):
-        pass
-
 
 class MalFalse(MalBoolean):
     value = "false"
-
-    def __init__(self):
-        pass
 
     def __bool__(self) -> bool:
         return False
 
 
-class _Fn:
+def malBool(cond) -> MalBoolean:
+    return MalTrue() if cond else MalFalse()
+
+
+class _Fn(Protocol):
     def __call__(self, *args: MalType) -> MalType: ...
 
 
@@ -210,6 +218,7 @@ class MalFn(MalType):
         self.value: _Fn = value
 
     def __call__(self, *args: MalType) -> MalType:
+        # logger.info(args)
         return self.value(*args)
 
     def __str__(self, readably=False) -> str:
