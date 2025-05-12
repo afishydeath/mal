@@ -29,11 +29,7 @@ def div(a: MalNumber, b: MalNumber) -> MalNumber:
 
 
 def prn(*a: MalType) -> MalNil:
-    print(
-        MalString(" ".join([x.__str__(readably=True) for x in a])).__str__(
-            readably=True
-        )
-    )
+    print(" ".join([x.__str__(readably=True) for x in a]))
     return MalNil()
 
 
@@ -99,6 +95,8 @@ ns = {
     "/": div,
     "prn": prn,
     "pr-str": pr_str_,
+    "str": str_,
+    "println": println,
     "list": list_,
     "list?": is_list,
     "empty?": is_empty,

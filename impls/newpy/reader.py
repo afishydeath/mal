@@ -136,7 +136,7 @@ def read_atom(reader: Reader) -> MalType:
         case "nil":
             return MalNil()
         case "goodstring":
-            s = MalString(token[1:-1])
+            s = MalString(MalString("").parse(token[1:-1]))
             logger.info(s)
             return s
         case "badstring":

@@ -158,7 +158,7 @@ class MalString(MalType):
     PARSE = {'"': '\\"', "\n": "\\n", "\\": "\\\\"}
 
     def __init__(self, value: str):
-        self.value: str = self.parse(value)
+        self.value: str = value
 
     def parse(self, value: str) -> str:
         return re.sub(r"\\.", lambda m: self.ESCAPE[m.group()], value)
@@ -168,10 +168,9 @@ class MalString(MalType):
 
     def __str__(self, readably=False) -> str:
         if readably:
-            out = self.escape(self.value)
+            return '"' + self.escape(self.value) + '"'
         else:
-            out = self.value
-        return '"' + out + '"'
+            return self.value
 
     def __len__(self) -> int:
         return len(self.value)
