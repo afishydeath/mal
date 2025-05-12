@@ -1,13 +1,20 @@
-from types_ import MalMap, MalNil, MalSymbol, MalType
+from types_ import MalList, MalMap, MalNil, MalSymbol, MalType, MalVector
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 class Env:
-    def __init__(self, outer: "Env|MalNil"):
+    def __init__(
+        self,
+        outer: "Env|MalNil",
+        binds: MalList[MalSymbol] | MalVector[MalSymbol],
+        exprs: MalList | MalVector,
+    ):
         self.outer = outer
         self.data = MalMap()
+        for p in range(len(binds)):
+            self.set(binds[p], exprs[p])
 
     def set(self, key: MalSymbol, value: MalType) -> None:
         self.data[key] = value

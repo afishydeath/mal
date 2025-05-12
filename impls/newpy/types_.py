@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -23,46 +23,47 @@ class MalType:
         return True
 
 
-class MalSequence(MalType):
-    value: list[MalType] = []
+class MalSequence[T: MalType](MalType):
+    value: list[T] = []
     start: str = ""
     end: str = ""
 
     def __init__(self, *args):
         if args and len(args) == 1:
-            self.value: list[MalType] = args[0]
+            self.value: list[T] = args[0]
         elif args:
             raise TypeError(f"Too many arguments {args}")
         else:
             self.value = []
 
     def __str__(self, readably=False) -> str:
-        # logger.info(self.value)
         return (
             self.start
             + " ".join([x.__str__(readably=readably) for x in self.value])
             + self.end
         )
 
-    def append(self, item: MalType) -> None:
+    def append(self, item: T) -> None:
         self.value.append(item)
 
     def __contains__(self, key) -> bool:
         return key in self.value
 
-    def __getitem__(self, key) -> MalType:
+    def __getitem__(self, key) -> T:
         return self.value[key]
 
     def __len__(self) -> int:
         return len(self.value)
 
 
-class MalList(MalSequence):
+class MalList[T: MalType](MalSequence):
+    value: list[T]
     start = "("
     end = ")"
 
 
-class MalVector(MalSequence):
+class MalVector[T: MalType](MalSequence):
+    value: list[T]
     start = "["
     end = "]"
 
@@ -177,26 +178,42 @@ class MalNil(MalType):
 
 
 class MalBoolean(MalType):
-    pass
+    def __init__(self, cond):
+        if cond:
+            return MalTrue()
+        return MalFalse()
 
 
 class MalTrue(MalBoolean):
     value = "true"
 
+    def __init__(self):
+        pass
+
 
 class MalFalse(MalBoolean):
     value = "false"
+
+    def __init__(self):
+        pass
 
     def __bool__(self) -> bool:
         return False
 
 
-class MalFn(MalType):
-    def __init__(self, value: Callable):
-        self.value: Callable = value
+class _Fn:
+    def __call__(self, *args: MalType) -> MalType: ...
 
-    def __call__(self, *args, **kwargs):
-        return self.value(*args, **kwargs)
+
+class MalFn(MalType):
+    def __init__(self, value: _Fn):
+        self.value: _Fn = value
+
+    def __call__(self, *args: MalType) -> MalType:
+        return self.value(*args)
+
+    def __str__(self, readably=False) -> str:
+        return "#<function>"
 
 
 class EOFError_(Exception):
