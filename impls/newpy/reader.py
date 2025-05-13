@@ -74,7 +74,7 @@ def tokenise(string) -> list:
 
 
 def read_form(reader: Reader) -> MalType:
-    logger.info(reader)
+    # logger.info(reader)
     peek = reader.peek()
     if peek[0] in ("(", "[", "{"):
         return read_list(reader, peek[0])
@@ -138,7 +138,7 @@ def read_atom(reader: Reader) -> MalType:
             return MalNil()
         case "goodstring":
             s = MalString(MalString("").parse(token[1:-1]))
-            logger.info(s)
+            # logger.info(s)
             return s
         case "badstring":
             raise EOFError_(f"EOF unclosed string at {token}")

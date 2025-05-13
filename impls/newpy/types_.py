@@ -18,7 +18,7 @@ class MalType:
         return f"{type(self)}({repr(self.value)})"
 
     def __eq__(self, other) -> bool:
-        return self.value == other.value
+        return self.value == other.value and self.__class__ == other.__class__
 
     def __lt__(self, other) -> bool:
         return self.value < other.value

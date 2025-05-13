@@ -2,7 +2,10 @@ from types_ import (
     MalAtom,
     MalFn,
     MalFnTCO,
+    MalMap,
     MalString,
+    MalSymbol,
+    MalVector,
     malBool,
     MalBoolean,
     MalList,
@@ -129,6 +132,26 @@ def swap(a: MalAtom, b: MalFn | MalFnTCO, *c: MalType) -> MalType:
     return a.value
 
 
+def cons(a: MalType, b: MalList | MalVector) -> MalList:
+    return MalList([a] + b.value)
+
+
+def concat(*a: MalList | MalVector) -> MalList:
+    out = MalList()
+    for lis in a:
+        for val in lis.value:
+            out.append(val)
+    return out
+
+
+def vec(a: MalList | MalVector) -> MalVector:
+    match a:
+        case MalList():
+            return MalVector(a.value)
+        case _:
+            return a
+
+
 ns = {
     "+": add,
     "-": sub,
@@ -154,4 +177,7 @@ ns = {
     "deref": deref,
     "reset!": reset,
     "swap!": swap,
+    "cons": cons,
+    "concat": concat,
+    "vec": vec,
 }
