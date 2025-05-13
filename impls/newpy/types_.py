@@ -119,7 +119,7 @@ class MalMap(MalType):
 
 class MalNumber(MalType):
     def __init__(self, value: int):
-        self.value = value
+        self.value: int = value
 
     def __add__(self, other):
         return MalNumber(self.value + other.value)
@@ -238,6 +238,7 @@ class MalFn(MalType):
 class MalFnTCO(MalType):
     def __init__(self, ast: MalType, params: MalList[MalSymbol], env, fn: MalFn):
         self.value = "#<functionwithtco>"
+        self.is_macro = False
         self.ast = ast
         self.params = params
         self.env = env

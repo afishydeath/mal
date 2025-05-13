@@ -152,6 +152,30 @@ def vec(a: MalList | MalVector) -> MalVector:
             return a
 
 
+def nth(a: MalList | MalVector, b: MalNumber) -> MalType:
+    return a.value[b.value]
+
+
+def first(a: MalList | MalVector | MalNil) -> MalType:
+    if isinstance(a, MalNil):
+        return MalNil()
+    if a.value:
+        return a.value[0]
+    else:
+        return MalNil()
+
+
+def rest(a: MalList | MalVector | MalNil) -> MalList:
+    if isinstance(a, MalNil) or len(a.value) < 2:
+        return MalList()
+    else:
+        return MalList(a.value[1:])
+
+
+def is_macro(a: MalFnTCO) -> MalBoolean:
+    return malBool(a.is_macro)
+
+
 ns = {
     "+": add,
     "-": sub,
@@ -180,4 +204,8 @@ ns = {
     "cons": cons,
     "concat": concat,
     "vec": vec,
+    "nth": nth,
+    "first": first,
+    "rest": rest,
+    "macro?": is_macro,
 }
