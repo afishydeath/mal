@@ -1,10 +1,15 @@
 from types_ import (
     MalAtom,
+    MalError,
+    MalFalse,
     MalFn,
     MalFnTCO,
+    MalKeyword,
     MalMap,
+    MalSequence,
     MalString,
     MalSymbol,
+    MalTrue,
     MalVector,
     malBool,
     MalBoolean,
@@ -12,6 +17,7 @@ from types_ import (
     MalNil,
     MalNumber,
     MalType,
+    Fn,
 )
 from reader import read_str
 import logging
@@ -36,6 +42,7 @@ def div(a: MalNumber, b: MalNumber) -> MalNumber:
 
 
 def prn(*a: MalType) -> MalNil:
+    logger.info(a)
     print(" ".join([x.__str__(readably=True) for x in a]))
     return MalNil()
 
@@ -67,15 +74,6 @@ def slurp(a: MalString) -> MalString:
         return MalString(f.read())
 
 
-def list_(*a: MalType) -> MalList:
-    return MalList(list(a))
-
-
-def is_list(a: MalType) -> MalBoolean:
-    # logger.info(a)
-    return malBool(isinstance(a, MalList))
-
-
 def is_empty(a: MalList) -> MalBoolean:
     return malBool(a == MalList())
 
@@ -104,14 +102,6 @@ def ge(a: MalType, b: MalType) -> MalBoolean:
     return malBool(a >= b)
 
 
-def atom(a: MalType) -> MalAtom:
-    return MalAtom(a)
-
-
-def is_atom(a: MalType) -> MalBoolean:
-    return malBool(isinstance(a, MalAtom))
-
-
 def deref(a: MalAtom) -> MalType:
     return a.value
 
@@ -122,13 +112,7 @@ def reset(a: MalAtom, b: MalType) -> MalType:
 
 
 def swap(a: MalAtom, b: MalFn | MalFnTCO, *c: MalType) -> MalType:
-    match b:
-        case MalFn():
-            a.value = b(a.value, *c)
-        case MalFnTCO():
-            a.value = b.fn(a.value, *c)
-        case _:
-            raise TypeError(f"Value {b} is not callable.")
+    a.value = b(a.value, *c)
     return a.value
 
 
@@ -153,14 +137,14 @@ def vec(a: MalList | MalVector) -> MalVector:
 
 
 def nth(a: MalList | MalVector, b: MalNumber) -> MalType:
-    return a.value[b.value]
+    return a[b.value]
 
 
 def first(a: MalList | MalVector | MalNil) -> MalType:
     if isinstance(a, MalNil):
         return MalNil()
     if a.value:
-        return a.value[0]
+        return a[0]
     else:
         return MalNil()
 
@@ -176,36 +160,123 @@ def is_macro(a: MalFnTCO) -> MalBoolean:
     return malBool(a.is_macro)
 
 
-ns = {
+def throw(a: MalType) -> MalType:
+    raise MalError(a)
+
+
+def apply(a: MalFn | MalFnTCO, *b: MalType) -> MalType:
+    match b[-1]:
+        case MalList() | MalVector():
+            return a(*(list(b[:-1]) + b[-1].value))
+        case _:
+            return a(*list(b))
+
+
+def map(a: MalFn | MalFnTCO, b: MalList | MalVector) -> MalList:
+    out = MalList()
+    for el in b.value:
+        out.append(a(el))
+    return out
+
+
+def assoc(a: MalMap, *b: MalType) -> MalMap:
+    return MalMap({key: a[key] for key in a.value}).from_list(*b)
+
+
+def dissoc(a: MalMap, *b: MalType) -> MalMap:
+    out = MalMap({key: a[key] for key in a.value})
+    for arg in b:
+        out.value.pop(arg, None)
+    return out
+
+
+def get(a: MalMap | MalNil, b: MalType) -> MalType:
+    if isinstance(a, MalMap) and b in a:
+        return a[b]
+    return MalNil()
+
+
+def contains(a: MalMap, b: MalType) -> MalBoolean:
+    return malBool(b in a)
+
+
+def keys(a: MalMap) -> MalList:
+    return MalList(a.value.keys())
+
+
+def values(a: MalMap) -> MalList:
+    return MalList(a.value.values())
+
+
+def is_t(t: type, a: MalType) -> MalBoolean:
+    return malBool(isinstance(a, t))
+
+
+def as_t(t: type, a: MalType) -> MalType:
+    return t(a.value)
+
+
+ns: dict[str, Fn] = {
+    # numeric functions
     "+": add,
     "-": sub,
     "*": mul,
     "/": div,
+    # comparisons
+    "=": eq,
+    "<": lt,
+    "<=": le,
+    ">": gt,
+    ">=": ge,
+    # string functions
     "prn": prn,
     "pr-str": pr_str_,
     "str": str_,
     "println": println,
     "read-string": read_string,
     "slurp": slurp,
-    "list": list_,
-    "list?": is_list,
-    "empty?": is_empty,
+    # sequence functions
     "count": count,
-    "=": eq,
-    "<": lt,
-    "<=": le,
-    ">": gt,
-    ">=": ge,
-    "atom": atom,
-    "atom?": is_atom,
-    "deref": deref,
-    "reset!": reset,
-    "swap!": swap,
     "cons": cons,
     "concat": concat,
     "vec": vec,
     "nth": nth,
     "first": first,
     "rest": rest,
+    "empty?": is_empty,
+    # map functions
+    "assoc": assoc,
+    "dissoc": dissoc,
+    "get": get,
+    "contains?": contains,
+    "keys": keys,
+    "vals": values,
+    # atom functions
+    "deref": deref,
+    "swap!": swap,
+    "reset!": reset,
+    # function functions
+    "apply": apply,
+    "map": map,
     "macro?": is_macro,
+    # is_t
+    "list?": lambda a: is_t(MalList, a),
+    "atom?": lambda a: is_t(MalAtom, a),
+    "nil?": lambda a: is_t(MalNil, a),
+    "true?": lambda a: is_t(MalTrue, a),
+    "false?": lambda a: is_t(MalFalse, a),
+    "symbol?": lambda a: is_t(MalSymbol, a),
+    "keyword?": lambda a: is_t(MalKeyword, a),
+    "vector?": lambda a: is_t(MalVector, a),
+    "sequential?": lambda a: is_t(MalSequence, a),
+    "map?": lambda a: is_t(MalMap, a),
+    # as_t
+    "list": lambda *a: as_t(MalList, MalList(a)),
+    "atom": lambda a: as_t(MalAtom, a),
+    "symbol": lambda a: as_t(MalSymbol, a),
+    "keyword": lambda a: MalKeyword(":" + a.value),
+    "vector": lambda *a: as_t(MalVector, MalList(a)),
+    "hash-map": lambda *a: MalMap().from_list(*a),
+    # other
+    "throw": throw,
 }

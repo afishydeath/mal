@@ -1,13 +1,13 @@
 import re
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
 
 class MalType:
-    value: str | int | list | Callable
+    value = "notimplemented"
 
     __match_args__ = ("value",)
 
@@ -63,11 +63,21 @@ class MalSequence[T: MalType](MalType):
     def __contains__(self, key) -> bool:
         return key in self.value
 
-    def __getitem__(self, key) -> T:
-        return self.value[key]
+    def __iter__(self):
+        return iter(self.value)
+
+    def __getitem__(self, key: int) -> T:
+        # logger.info("here")
+        try:
+            return self.value[key]
+        except IndexError:
+            raise MalIndexError(key)
 
     def __len__(self) -> int:
         return len(self.value)
+
+    def __eq__(self, other) -> bool:
+        return self.value == other.value
 
 
 class MalList[T: MalType](MalSequence):
@@ -91,6 +101,20 @@ class MalMap(MalType):
             raise TypeError(f"Too many arguments {args}")
         else:
             self.value = {}
+
+    def from_list(self, *args: MalType) -> "MalMap":
+        keyflag = True
+        key: MalType = MalNil()
+        for arg in args:
+            if keyflag:
+                key = arg
+                keyflag = False
+            else:
+                self[key] = arg
+                keyflag = True
+        if not keyflag:
+            raise KeyError(f"Uneven arguments provided {args}")
+        return self
 
     def __setitem__(self, key, value) -> None:
         self.value[key] = value
@@ -208,31 +232,33 @@ def malBool(cond) -> MalBoolean:
     return MalTrue() if cond else MalFalse()
 
 
-class _Fn1(Protocol):
-    def __call__(self, a: MalType) -> MalType: ...
+class Fn1Arg[T: MalType, T1: MalType](Protocol):
+    def __call__(self, a: T) -> T1: ...
 
 
-class _Fn2(Protocol):
-    def __call__(self, a: MalType, b: MalType) -> MalType: ...
+class Fn2Arg[T: MalType, T1: MalType, T2: MalType](Protocol):
+    def __call__(self, a: T, b: T1) -> T2: ...
 
 
-class _Fn_(Protocol):
-    def __call__(self, *a: MalType) -> MalType: ...
+class FnXArg[T: MalType, T1: MalType](Protocol):
+    def __call__(self, *a: T) -> T1: ...
 
 
-_Fn = _Fn1 | _Fn2 | _Fn_
+class FnHeadXTail[T: MalType, T1: MalType, T2: MalType, T3: MalType](Protocol):
+    def __call__(self, a: T, *b: T1, c: T2) -> T3: ...
+
+
+Fn = Fn1Arg | Fn2Arg | FnXArg | FnHeadXTail
 
 
 class MalFn(MalType):
-    def __init__(self, value: _Fn):
-        self.value: _Fn = value
+    def __init__(self, value: Fn):
+        self.value = "#<function>"
+        self.fn: Fn = value
 
     def __call__(self, *args: MalType) -> MalType:
         # logger.info(args)
-        return self.value(*args)
-
-    def __str__(self, readably=False) -> str:
-        return "#<function>"
+        return self.fn(*args)
 
 
 class MalFnTCO(MalType):
@@ -244,6 +270,9 @@ class MalFnTCO(MalType):
         self.env = env
         self.fn = fn
 
+    def __call__(self, *args: MalType) -> MalType:
+        return self.fn(*args)
+
 
 class MalAtom(MalType):
     def __init__(self, value: MalType):
@@ -253,5 +282,32 @@ class MalAtom(MalType):
         return MalList([MalSymbol("atom"), self.value]).__str__(readably=readably)
 
 
-class EOFError_(Exception):
-    pass
+class MalError(Exception):
+    prefix = ""
+    postfix = ""
+
+    def __init__(self, value):
+        logger.info(repr(value))
+        self.value = str(value)
+        self.ast = None
+        if isinstance(value, MalType) and self.__class__ == MalError:
+            self.ast = value
+
+    def __str__(self) -> str:
+        return (
+            (self.prefix + " " if self.prefix else "")
+            + self.value
+            + (" " + self.postfix if self.postfix else "")
+        )
+
+
+class MalKeyError(MalError):
+    postfix = "not found"
+
+
+class MalIndexError(MalError):
+    prefix = "Index out of range:"
+
+
+class MalEofError(MalError):
+    prefix = "EOF:"

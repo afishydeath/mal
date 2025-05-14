@@ -1,4 +1,5 @@
 from types_ import (
+    MalEofError,
     MalString,
     MalType,
     MalList,
@@ -10,7 +11,6 @@ from types_ import (
     MalVector,
     MalMap,
     MalKeyword,
-    EOFError_,
 )
 import re
 import logging
@@ -53,7 +53,7 @@ class Reader:
         if self.position < len(self.tokens):
             return self.tokens[self.position]
         else:
-            raise EOFError_(f"EOF no more tokens{str(self)}")
+            raise MalEofError(f"no more tokens in reader: {str(self)}")
 
     def __str__(self):
         return f"{self.tokens=}, {self.position=}"
@@ -106,7 +106,7 @@ def read_list(reader: Reader, start: str) -> MalList:
             running.append(tok)
         tok = read_form(reader)
     if map and not key_flag:
-        raise EOFError_(f"EOF unmatched key value in map {running}")
+        raise MalEofError(f"unmatched key value in map {running}")
     return running
 
 
@@ -141,7 +141,7 @@ def read_atom(reader: Reader) -> MalType:
             # logger.info(s)
             return s
         case "badstring":
-            raise EOFError_(f"EOF unclosed string at {token}")
+            raise MalEofError(f"unclosed string at {token}")
         case "macro":
             return MalList([MalSymbol(MACROS[token]), read_form(reader)])
         case "meta":
