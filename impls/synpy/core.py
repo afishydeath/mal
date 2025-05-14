@@ -18,9 +18,12 @@ from types_ import (
     MalNumber,
     MalType,
     Fn,
+    hasMeta,
+    to_mal_type,
 )
 from reader import read_str
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +219,73 @@ def as_t(t: type, a: MalType) -> MalType:
     return t(a.value)
 
 
+def readline(a: MalString) -> MalString | MalNil:
+    try:
+        return MalString(input(a.value))
+    except EOFError:
+        return MalNil()
+
+
+def meta(a: hasMeta) -> MalType:
+    return a.meta
+
+
+def with_meta(a: hasMeta, b: MalType) -> hasMeta:
+    match a:
+        case MalList():
+            out = MalList(a.value)
+        case MalVector():
+            out = MalVector(a.value)
+        case MalMap():
+            out = MalMap({k: a[k] for k in a})
+        case MalFn():
+            out = MalFn(a.fn)
+        case MalFnTCO():
+            out = MalFnTCO(a.ast, a.params, a.env, a.fn)
+            out.is_macro = a.is_macro
+    out.meta = b
+    return out
+
+
+def time_ms() -> MalNumber:
+    return MalNumber(time.time_ns() // 1000)
+
+
+def conj(a: MalSequence, *b: MalType) -> MalSequence:
+    match a:
+        case MalList():
+            return MalList(list(b)[::-1] + a.value)
+        case MalVector():
+            return MalVector(a.value + list(b))
+        case _:
+            raise TypeError("Invalid input to conj", a)
+
+
+def seq(a: MalSequence | MalString | MalNil) -> MalList | MalNil:
+    match a:
+        case MalList([]):
+            return MalNil()
+        case MalVector([]):
+            return MalNil()
+        case MalString(""):
+            return MalNil()
+        case MalNil():
+            return MalNil()
+        case MalList():
+            return a
+        case MalVector(value):
+            return MalList(value)
+        case MalString(value):
+            return MalList(list(value))
+        case _:
+            raise TypeError("Invalid input to seq", a)
+
+
+def synpy_eval(a: MalString) -> MalType:
+    result = eval(a.value)
+    return to_mal_type(result)
+
+
 ns: dict[str, Fn] = {
     # numeric functions
     "+": add,
@@ -235,6 +305,7 @@ ns: dict[str, Fn] = {
     "println": println,
     "read-string": read_string,
     "slurp": slurp,
+    "readline": readline,
     # sequence functions
     "count": count,
     "cons": cons,
@@ -244,6 +315,7 @@ ns: dict[str, Fn] = {
     "first": first,
     "rest": rest,
     "empty?": is_empty,
+    "seq": seq,
     # map functions
     "assoc": assoc,
     "dissoc": dissoc,
@@ -270,6 +342,9 @@ ns: dict[str, Fn] = {
     "vector?": lambda a: is_t(MalVector, a),
     "sequential?": lambda a: is_t(MalSequence, a),
     "map?": lambda a: is_t(MalMap, a),
+    "string?": lambda a: is_t(MalString, a),
+    "number?": lambda a: is_t(MalNumber, a),
+    "fn?": lambda a: malBool(is_t(MalFn, a) or is_t(MalFnTCO, a)),
     # as_t
     "list": lambda *a: as_t(MalList, MalList(a)),
     "atom": lambda a: as_t(MalAtom, a),
@@ -277,6 +352,11 @@ ns: dict[str, Fn] = {
     "keyword": lambda a: MalKeyword(":" + a.value),
     "vector": lambda *a: as_t(MalVector, MalList(a)),
     "hash-map": lambda *a: MalMap().from_list(*a),
+    # meta
+    "meta": meta,
+    "with-meta": with_meta,
     # other
     "throw": throw,
+    "time-ms": time_ms,
+    "synpy-eval": synpy_eval,
 }

@@ -1,6 +1,7 @@
 import re
 import logging
 from collections.abc import Iterable
+from types import NoneType
 from typing import Protocol
 
 logger = logging.getLogger(__name__)
@@ -36,10 +37,21 @@ class MalType:
         return True
 
 
+class MalNil(MalType):
+    value = "nil"
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __len__(self) -> int:
+        return 0
+
+
 class MalSequence[T: MalType](MalType):
     value: list[T] = []
     start: str = ""
     end: str = ""
+    meta: MalType = MalNil()
 
     def __init__(self, *args: Iterable[T]):
         # logger.info(args)
@@ -93,6 +105,8 @@ class MalVector[T: MalType](MalSequence):
 
 
 class MalMap(MalType):
+    meta: MalType = MalNil()
+
     def __init__(self, *args: dict[MalType, MalType]):
         if args and len(args) == 1:
             # logger.info(args)
@@ -203,16 +217,6 @@ class MalString(MalType):
         return hash('"' + self.value)
 
 
-class MalNil(MalType):
-    value = "nil"
-
-    def __bool__(self) -> bool:
-        return False
-
-    def __len__(self) -> int:
-        return 0
-
-
 class MalBoolean(MalType):
     pass
 
@@ -232,6 +236,10 @@ def malBool(cond) -> MalBoolean:
     return MalTrue() if cond else MalFalse()
 
 
+class Fn0Arg[T: MalType](Protocol):
+    def __call__(self) -> T: ...
+
+
 class Fn1Arg[T: MalType, T1: MalType](Protocol):
     def __call__(self, a: T) -> T1: ...
 
@@ -248,30 +256,55 @@ class FnHeadXTail[T: MalType, T1: MalType, T2: MalType, T3: MalType](Protocol):
     def __call__(self, a: T, *b: T1, c: T2) -> T3: ...
 
 
-Fn = Fn1Arg | Fn2Arg | FnXArg | FnHeadXTail
+Fn = Fn0Arg | Fn1Arg | Fn2Arg | FnXArg | FnHeadXTail
 
 
 class MalFn(MalType):
+    meta: MalType = MalNil()
+
     def __init__(self, value: Fn):
         self.value = "#<function>"
         self.fn: Fn = value
 
     def __call__(self, *args: MalType) -> MalType:
         # logger.info(args)
-        return self.fn(*args)
+        return self.fn(*args)  # type: ignore // this is literally a broken error i do not get it
 
 
 class MalFnTCO(MalType):
+    meta: MalType = MalNil()
+
     def __init__(self, ast: MalType, params: MalList[MalSymbol], env, fn: MalFn):
         self.value = "#<functionwithtco>"
         self.is_macro = False
-        self.ast = ast
-        self.params = params
+        self.ast: MalType = ast
+        self.params: MalList[MalSymbol] = params
         self.env = env
-        self.fn = fn
+        self.fn: MalFn = fn
 
     def __call__(self, *args: MalType) -> MalType:
         return self.fn(*args)
+
+
+hasMeta = MalSequence | MalMap | MalFn | MalFnTCO
+
+
+def to_mal_type(value) -> MalType:
+    match value:
+        case list() | tuple():
+            return MalList([to_mal_type(x) for x in value])
+        case dict():
+            return MalMap({to_mal_type(k): to_mal_type(value[k]) for k in value})
+        case str():
+            return MalString(value)
+        case int():
+            return MalNumber(value)
+        case bool():
+            return malBool(value)
+        case _:
+            raise TypeError(
+                f"type {type(value)} not implemented for 'to_mal_type' for {value}"
+            )
 
 
 class MalAtom(MalType):
