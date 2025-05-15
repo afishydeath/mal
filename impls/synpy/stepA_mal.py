@@ -57,7 +57,7 @@ def quasiquote(ast: MalType, vec_flag=False) -> MalType:
 
 def READ(string: str) -> MalType:
     ast = reader.read_str(string)
-    # logger.info(repr(ast))
+    logger.info(ast)
     return ast
 
 
@@ -83,9 +83,10 @@ def EVAL(ast: MalType, env) -> MalType:
                 f = EVAL(value, env)
                 if not isinstance(f, MalFnTCO):
                     raise TypeError(f"evaluated value {f} is not a MalFnTco")
-                f.is_macro = True
-                env.set(key, f)
-                return f
+                new = MalFnTCO(f.ast, f.params, f.env, f.fn)
+                new.is_macro = True
+                env.set(key, new)
+                return new
 
             case MalList(
                 [MalSymbol("let*"), MalList() | MalVector() as bindexpr, body]
@@ -134,9 +135,9 @@ def EVAL(ast: MalType, env) -> MalType:
                 ast = quasiquote(arg)
 
             case MalList([MalSymbol("try*"), a, MalList([MalSymbol("catch*"), b, c])]):
-                logger.info(ast)
+                # logger.info(ast)
                 try:
-                    logger.info(a)
+                    # logger.info(a)
                     return EVAL(a, env)
                 except MalError as e:
                     _env = Env(env, MalList(), MalList())
@@ -153,20 +154,22 @@ def EVAL(ast: MalType, env) -> MalType:
 
             case MalList([first, *rest]):
                 f = EVAL(first, env)
-                logger.info(ast)
-                rest = [EVAL(x, env) for x in rest]
-                logger.info(rest)
+                # logger.info(ast)
+                # logger.info(rest)
                 match f:
                     case MalFn():
-                        return f(*rest)
+                        return f(*[EVAL(x, env) for x in rest])
                     case MalFnTCO():
                         if f.is_macro:
-                            ast = f.fn(*rest)
+                            logger.info(f.ast)
+                            ast = f(*rest)
                         else:
                             ast = f.ast
-                            env = Env(f.env, f.params, MalList(rest))
-                            logger.info(ast)
-                            logger.info(env)
+                            env = Env(
+                                f.env, f.params, MalList([EVAL(x, env) for x in rest])
+                            )
+                            # logger.info(ast)
+                            # logger.info(env)
                     case _:
                         raise KeyError(f"Value {f} is not callable")
 
@@ -197,7 +200,7 @@ def eval_(a: MalType) -> MalType:
 
 repl_env.set(MalSymbol("eval"), MalFn(eval_))
 repl_env.set(MalSymbol("*ARGV*"), MalList())
-repl_env.set(MalSymbol("*host-language*"), MalString("SynPy"))
+repl_env.set(MalSymbol("*host-language*"), MalString("synpy"))
 rep("(def! not (fn* (a) (if a false true)))")
 rep('(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))')
 rep(
@@ -206,7 +209,7 @@ rep(
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        logger.info(sys.argv)
+        # logger.info(sys.argv)
         repl_env.set(MalSymbol("*ARGV*"), MalList([MalString(x) for x in sys.argv[2:]]))
         rep(f'(load-file "{sys.argv[1]}")')
     else:
@@ -219,4 +222,5 @@ if __name__ == "__main__":
                 break
             except Exception as e:
                 # raise e
+                logger.error(e)
                 print(f"Exception: {e}")

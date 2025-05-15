@@ -1,7 +1,6 @@
 import re
 import logging
 from collections.abc import Iterable
-from types import NoneType
 from typing import Protocol
 
 logger = logging.getLogger(__name__)
@@ -154,6 +153,9 @@ class MalMap(MalType):
             + "}"
         )
 
+    def __iter__(self):
+        return iter(self.value)
+
 
 class MalNumber(MalType):
     def __init__(self, value: int):
@@ -267,8 +269,11 @@ class MalFn(MalType):
         self.fn: Fn = value
 
     def __call__(self, *args: MalType) -> MalType:
-        # logger.info(args)
+        logger.info(args)
         return self.fn(*args)  # type: ignore // this is literally a broken error i do not get it
+
+    def __str__(self, readably=False):
+        return self.value
 
 
 class MalFnTCO(MalType):
@@ -284,6 +289,9 @@ class MalFnTCO(MalType):
 
     def __call__(self, *args: MalType) -> MalType:
         return self.fn(*args)
+
+    def __str__(self, readably=False):
+        return self.value
 
 
 hasMeta = MalSequence | MalMap | MalFn | MalFnTCO
@@ -320,7 +328,7 @@ class MalError(Exception):
     postfix = ""
 
     def __init__(self, value):
-        logger.info(repr(value))
+        # logger.info(repr(value))
         self.value = str(value)
         self.ast = None
         if isinstance(value, MalType) and self.__class__ == MalError:

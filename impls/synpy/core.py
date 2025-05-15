@@ -45,17 +45,17 @@ def div(a: MalNumber, b: MalNumber) -> MalNumber:
 
 
 def prn(*a: MalType) -> MalNil:
-    logger.info(a)
+    # logger.info(a)
     print(" ".join([x.__str__(readably=True) for x in a]))
     return MalNil()
 
 
 def pr_str_(*a: MalType) -> MalString:
-    logger.info(a)
+    # logger.info(a)
     tmp = [x.__str__(readably=True) for x in a]
-    logger.info(tmp)
+    # logger.info(tmp)
     out = MalString(" ".join(tmp))
-    logger.info(out)
+    # logger.info(out)
     return out
 
 
@@ -69,7 +69,9 @@ def println(*a: MalType) -> MalNil:
 
 
 def read_string(a: MalString) -> MalType:
-    return read_str(a.value)
+    ast = read_str(a.value)
+    logger.info(ast)
+    return ast
 
 
 def slurp(a: MalString) -> MalString:
@@ -157,10 +159,6 @@ def rest(a: MalList | MalVector | MalNil) -> MalList:
         return MalList()
     else:
         return MalList(a.value[1:])
-
-
-def is_macro(a: MalFnTCO) -> MalBoolean:
-    return malBool(a.is_macro)
 
 
 def throw(a: MalType) -> MalType:
@@ -276,7 +274,7 @@ def seq(a: MalSequence | MalString | MalNil) -> MalList | MalNil:
         case MalVector(value):
             return MalList(value)
         case MalString(value):
-            return MalList(list(value))
+            return MalList([MalString(x) for x in a.value])
         case _:
             raise TypeError("Invalid input to seq", a)
 
@@ -284,6 +282,24 @@ def seq(a: MalSequence | MalString | MalNil) -> MalList | MalNil:
 def synpy_eval(a: MalString) -> MalType:
     result = eval(a.value)
     return to_mal_type(result)
+
+
+def is_macro(a: MalFn | MalFnTCO) -> MalBoolean:
+    match a:
+        case MalFnTCO():
+            return malBool(a.is_macro)
+        case _:
+            return MalFalse()
+
+
+def is_fn(a: MalFn | MalFnTCO) -> MalBoolean:
+    match a:
+        case MalFn():
+            return MalTrue()
+        case MalFnTCO():
+            return malBool(not a.is_macro)
+        case _:
+            return MalFalse()
 
 
 ns: dict[str, Fn] = {
@@ -316,6 +332,7 @@ ns: dict[str, Fn] = {
     "rest": rest,
     "empty?": is_empty,
     "seq": seq,
+    "conj": conj,
     # map functions
     "assoc": assoc,
     "dissoc": dissoc,
@@ -344,10 +361,10 @@ ns: dict[str, Fn] = {
     "map?": lambda a: is_t(MalMap, a),
     "string?": lambda a: is_t(MalString, a),
     "number?": lambda a: is_t(MalNumber, a),
-    "fn?": lambda a: malBool(is_t(MalFn, a) or is_t(MalFnTCO, a)),
+    "fn?": is_fn,
     # as_t
     "list": lambda *a: as_t(MalList, MalList(a)),
-    "atom": lambda a: as_t(MalAtom, a),
+    "atom": lambda a: MalAtom(a),
     "symbol": lambda a: as_t(MalSymbol, a),
     "keyword": lambda a: MalKeyword(":" + a.value),
     "vector": lambda *a: as_t(MalVector, MalList(a)),
