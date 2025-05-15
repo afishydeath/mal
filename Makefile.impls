@@ -203,6 +203,5 @@ yorick_STEP_TO_PROG =        impls/yorick/$($(1)).i
 xslt_STEP_TO_PROG =          impls/xslt/$($(1))
 zig_STEP_TO_PROG =           impls/zig/$($(1))
 # mine
-myrust_STEP_TO_PROG =        impls/myrust/target/release/$($(1))
 mypython_STEP_TO_PROG =			 impls/mypython/$($(1)).py
 synpy_STEP_TO_PROG = 		 impls/synpy/$($(1)).py
